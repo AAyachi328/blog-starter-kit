@@ -9,15 +9,42 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Fonction pour extraire la date du nom de fichier
+function extractDateFromFileName(fileName) {
+  // Format attendu: L_equipe_du_Mercredi_16_Octobre_2024
+  const months = {
+    'janvier': '01', 'fevrier': '02', 'mars': '03', 'avril': '04',
+    'mai': '05', 'juin': '06', 'juillet': '07', 'aout': '08',
+    'septembre': '09', 'octobre': '10', 'novembre': '11', 'decembre': '12'
+  };
+
+  try {
+    const match = fileName.toLowerCase().match(/(\d{1,2})_([a-z]+)_(\d{4})/i);
+    if (match) {
+      const [_, day, month, year] = match;
+      const monthNum = months[month.toLowerCase()];
+      if (monthNum) {
+        const formattedDay = day.padStart(2, '0');
+        return new Date(`${year}-${monthNum}-${formattedDay}T12:00:00.000Z`);
+      }
+    }
+  } catch (error) {
+    console.log('Error extracting date from filename:', error);
+  }
+  
+  return new Date(); // Date actuelle par défaut
+}
+
 // Fonction pour générer le frontmatter
-function generateFrontmatter(title) {
+function generateFrontmatter(title, originalFileName) {
   console.log('Generating frontmatter with title:', title);
-  const date = new Date().toISOString();
+  const date = extractDateFromFileName(originalFileName);
+  const excerpt = `Article sur ${title.toLowerCase()}`;
   return `---
 title: "${title}"
-excerpt: "Article généré à partir d'un PDF"
+excerpt: "${excerpt}"
 coverImage: "/assets/blog/preview/cover.jpg"
-date: "${date}"
+date: "${date.toISOString()}"
 author:
   name: "Sarah Chen"
   picture: "/assets/blog/authors/jj.jpeg"
@@ -43,15 +70,18 @@ async function getOrCreateAssistant() {
     console.log('Creating new assistant...');
     return await openai.beta.assistants.create({
       name: "PDF Analyzer",
-      instructions: `Vous êtes un assistant spécialisé dans la création d'articles de blog à partir de PDF de journaux sportifs.
-      Votre tâche est d'extraire et d'analyser le contenu du PDF pour créer un article structuré.
+      instructions: `Vous êtes un assistant spécialisé dans la création d'articles de blog sur le tennis à partir de PDF de journaux sportifs.
+      Votre tâche est d'extraire et d'analyser le contenu du PDF pour créer un article structuré sur le tennis.
       
       Instructions spécifiques :
       1. Utilisez l'outil file_search pour lire le contenu du PDF
       2. Créez un article avec des titres courts et accrocheurs
-      3. Commencez TOUJOURS par un titre de niveau 2 (##)
+      3. Commencez TOUJOURS par un titre principal de niveau 2 en utilisant '## ' (deux dièses suivis d'un espace)
       4. Structurez le contenu de manière journalistique
-      5. Ne mentionnez jamais la source ou le PDF dans le contenu, exemple : 【4:14†source】
+      5. Ne mentionnez jamais la source ou le PDF dans le contenu
+      6. N'utilisez PAS d'astérisques (**) pour les titres
+      7. Le titre principal DOIT être de niveau 2 (##), les sous-titres peuvent être de niveau 3 (###)
+      8. Le titre principal doit être la première ligne de votre réponse
 
       Exemple exact de la structure attendue :
 
@@ -61,7 +91,7 @@ async function getOrCreateAssistant() {
 ### Les détails importants
 [Développement des points clés]
 
-## La conclusion
+### La conclusion
 [Résumé et perspective]`,
       model: "gpt-4o",
       tools: [{ type: "file_search" }]
@@ -70,6 +100,77 @@ async function getOrCreateAssistant() {
     console.error('Error getting/creating assistant:', error);
     throw error;
   }
+}
+
+// Fonction pour attendre
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Fonction pour uploader le fichier avec retries
+async function uploadFileWithRetry(filePath, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Upload attempt ${attempt}/${maxRetries}...`);
+      const fileStream = fs.createReadStream(filePath);
+      const fileUpload = await openai.files.create({
+        file: fileStream,
+        purpose: 'assistants',
+      });
+      console.log('File uploaded successfully:', fileUpload.id);
+      return fileUpload;
+    } catch (error) {
+      lastError = error;
+      console.error(`Upload attempt ${attempt} failed:`, error.message);
+      
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * (2 ** (attempt - 1)), 8000); // exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
+        await wait(delay);
+      }
+    }
+  }
+  
+  throw new Error(`Failed to upload file after ${maxRetries} attempts: ${lastError.message}`);
+}
+
+// Fonction pour vérifier le statut du run avec timeout
+async function checkRunStatus(threadId, runId, maxAttempts = 180) { // 3 minutes max
+  let attempts = 0;
+  let lastStatus = '';
+
+  while (attempts < maxAttempts) {
+    const runStatus = await openai.beta.threads.runs.retrieve(threadId, runId, {
+      include: ['step_details.tool_calls[*].file_search.results[*].content']
+    });
+    
+    if (runStatus.status !== lastStatus) {
+      console.log(`Run status changed to: ${runStatus.status}`);
+      lastStatus = runStatus.status;
+    }
+
+    switch (runStatus.status) {
+      case 'completed':
+        return runStatus;
+      case 'failed':
+      case 'expired':
+      case 'cancelled':
+        throw new Error(`Assistant run ${runStatus.status}: ${runStatus.last_error || 'No error details'}`);
+      case 'requires_action':
+        console.log('Run requires action:', runStatus.required_action);
+        break;
+      default:
+        // in_progress, queued, etc.
+        if (attempts % 10 === 0) { // Log every 10 attempts
+          console.log(`Still waiting... Status: ${runStatus.status} (${attempts}/${maxAttempts})`);
+        }
+    }
+
+    attempts++;
+    await wait(1000); // Wait 1 second between checks
+  }
+
+  throw new Error(`Timeout after ${maxAttempts} seconds. Last status: ${lastStatus}`);
 }
 
 // Gestionnaire de route POST pour l'API
@@ -153,23 +254,17 @@ export async function POST(request) {
       );
     }
 
-    // Upload du fichier vers OpenAI avec un nouveau stream
+    // Upload du fichier vers OpenAI avec retries
     console.log('Uploading file to OpenAI...');
-    let fileStream;
     try {
-      fileStream = fs.createReadStream(tempPath);
-      fileUpload = await openai.files.create({
-        file: fileStream,
-        purpose: 'assistants',
-      });
+      fileUpload = await uploadFileWithRetry(tempPath);
       console.log('File uploaded to OpenAI:', fileUpload.id);
     } catch (error) {
       console.error('Error uploading to OpenAI:', error);
-      throw error;
-    } finally {
-      if (fileStream) {
-        fileStream.destroy();
-      }
+      return NextResponse.json(
+        { error: 'Failed to upload file to OpenAI. Please try again.' },
+        { status: 500 }
+      );
     }
 
     // Récupération ou création de l'assistant
@@ -182,7 +277,7 @@ export async function POST(request) {
       messages: [
         {
           role: "user",
-          content: "Créez un article à partir de ce journal sportif. Utilisez l'outil file_search pour lire le contenu et structurez l'article de manière journalistique.",
+          content: "Créez un article sur le tennis à partir de ce journal sportif. Utilisez l'outil file_search pour lire le contenu et structurez l'article de manière journalistique.",
           attachments: [{ file_id: fileUpload.id, tools: [{ type: "file_search" }] }],
         },
       ],
@@ -192,132 +287,88 @@ export async function POST(request) {
     // Lancement de l'analyse par l'assistant
     console.log('Starting analysis...');
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistant.id
-      //additional_instructions: "Utilisez l'outil file_search pour analyser le contenu du PDF et fournir un résumé détaillé.",
+      assistant_id: assistant.id,
+      instructions: "Analysez le PDF et créez un article structuré. Utilisez l'outil file_search pour accéder au contenu."
     });
     console.log('Run created:', run.id);
 
-    // Attente et vérification de la complétion de l'analyse
-    let runStatus;
-    let attempts = 0;
-    const maxAttempts = 60; // 60 secondes maximum d'attente
+    try {
+      // Attente du résultat avec meilleure gestion du timeout
+      console.log('Waiting for completion...');
+      const runStatus = await checkRunStatus(thread.id, run.id);
+      console.log('Analysis completed successfully');
 
-    console.log('Waiting for completion...');
-    // Boucle de polling pour vérifier l'état de l'analyse
-    do {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Attente d'1 seconde entre chaque vérification
-      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id, {
-        include: ['step_details.tool_calls[*].file_search.results[*].content']
-      });
-      attempts++;
-      console.log(`Status check ${attempts}: ${runStatus.status}`);
+      // Récupération des messages et du résultat
+      console.log('Getting messages...');
+      const messages = await openai.beta.threads.messages.list(thread.id);
+      const lastMessage = messages.data[0];
 
-      // Vérification des erreurs potentielles
-      if (runStatus.status === 'failed' || runStatus.status === 'expired') {
-        throw new Error(`Assistant run ${runStatus.status}`);
+      // Vérification de la présence d'une réponse
+      if (!lastMessage || !lastMessage.content || !lastMessage.content[0]) {
+        throw new Error('No response from assistant');
       }
-    } while (runStatus.status !== 'completed' && attempts < maxAttempts);
 
-    // Vérification du timeout
-    if (attempts >= maxAttempts) {
-      throw new Error('Timeout waiting for assistant response');
-    }
-
-    // Récupération des messages et du résultat
-    console.log('Getting messages...');
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const lastMessage = messages.data[0];
-
-    // Vérification de la présence d'une réponse
-    if (!lastMessage || !lastMessage.content || !lastMessage.content[0]) {
-      throw new Error('No response from assistant');
-    }
-
-    // Traitement de la réponse et création du fichier markdown
-    console.log('Processing response...');
-    const content = lastMessage.content[0];
-    if (content.type === 'text') {
-      const { text } = content;
-      
-      // Log de la réponse brute pour déboguer
-      console.log('Raw response:', text.value);
-      
-      // Vérifier si la réponse contient un message d'erreur
-      if (text.value.includes("n'arrive pas à extraire") || text.value.includes("plus de détails")) {
-        console.log('Assistant could not read the file content');
+      // Traitement de la réponse et création du fichier markdown
+      console.log('Processing response...');
+      const content = lastMessage.content[0];
+      if (content.type === 'text') {
+        const { text } = content;
         
-        // Créer un article par défaut
-        const defaultContent = `## Article en cours de traitement
-        
-Le contenu de cet article est en cours de préparation. Merci de votre patience.
+        // Log de la réponse brute pour déboguer
+        console.log('Raw response:', text.value);
 
-### Mise à jour à venir
-Le contenu sera bientôt disponible avec tous les détails.`;
+        // Extraire le premier titre pour l'utiliser dans le frontmatter
+        const lines = text.value.split('\n').map(line => line.trim()).filter(line => line);
+        console.log('Lines:', lines);
         
-        const title = "Article en cours de traitement";
-        const fullContent = generateFrontmatter(title) + defaultContent;
+        // Chercher un titre avec #, ##, ### ou **
+        let titleLine = lines.find(line => /^#{1,3}\s+/.test(line));
+        if (!titleLine) {
+          titleLine = lines.find(line => line.startsWith('**') && line.endsWith('**'));
+        }
+        console.log('Found title line:', titleLine);
         
-        // Générer le nom du fichier
+        if (!titleLine) {
+          console.log('No valid title found in response');
+          throw new Error('No valid article structure found in response');
+        }
+
+        // Extraire le titre sans les #, ## ou ** et les espaces
+        const title = titleLine.replace(/^#{1,3}\s*|\*\*/g, '').trim();
+        console.log('Final extracted title:', title);
+
+        // Supprimer le titre du contenu car il sera dans le frontmatter
+        const contentWithoutTitle = text.value.replace(titleLine, '').trim();
+
+        // Générer le contenu complet avec frontmatter
+        const fullContent = generateFrontmatter(title, originalName) + contentWithoutTitle;
+        
+        // Générer le nom du fichier final avec le nom original du PDF
         const date = new Date();
         const sanitizedName = originalName.replace(/\.pdf$/, '');
         const fileName = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${sanitizedName}.md`;
+        console.log('Generated filename:', fileName);
         
         const outputPath = path.join(process.cwd(), '_posts', fileName);
+        console.log('Writing to:', outputPath);
         fs.writeFileSync(outputPath, fullContent, 'utf8');
-        
+        console.log('File written successfully');
+
         return NextResponse.json({
           result: fullContent,
           fileName: fileName
         });
       }
 
-      // Extraire le premier titre pour l'utiliser dans le frontmatter
-      const lines = text.value.split('\n');
-      const titleLine = lines.find(line => line.trim().startsWith('## '));
-      
-      if (!titleLine) {
-        console.log('No valid title found in response, using default title');
-        const title = "Article en cours de traitement";
-        const fullContent = generateFrontmatter(title) + text.value;
-        
-        const date = new Date();
-        const sanitizedName = originalName.replace(/\.pdf$/, '');
-        const fileName = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${sanitizedName}.md`;
-        
-        const outputPath = path.join(process.cwd(), '_posts', fileName);
-        fs.writeFileSync(outputPath, fullContent, 'utf8');
-        
-        return NextResponse.json({
-          result: fullContent,
-          fileName: fileName
-        });
-      }
-
-      const title = titleLine.replace(/^##\s*/, '').trim();
-      console.log('Extracted title:', title);
-
-      // Générer le contenu complet avec frontmatter
-      const fullContent = generateFrontmatter(title) + text.value;
-      
-      // Générer le nom du fichier final avec le nom original du PDF
-      const date = new Date();
-      const sanitizedName = originalName.replace(/\.pdf$/, '');
-      const fileName = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${sanitizedName}.md`;
-      console.log('Generated filename:', fileName);
-      
-      const outputPath = path.join(process.cwd(), '_posts', fileName);
-      console.log('Writing to:', outputPath);
-      fs.writeFileSync(outputPath, fullContent, 'utf8');
-      console.log('File written successfully');
-
-      return NextResponse.json({
-        result: fullContent,
-        fileName: fileName
-      });
+      // Renvoi du résultat simple si pas de citations
+      return NextResponse.json({ result: content.text.value });
+    } catch (error) {
+      console.error('Error processing run:', error);
+      return NextResponse.json(
+        { error: `Error processing run: ${error.message}` },
+        { status: 500 }
+      );
     }
-
-    // Renvoi du résultat simple si pas de citations
-    return NextResponse.json({ result: content.text.value });
   } catch (error) {
     // Gestion des erreurs
     console.error('Error processing PDF:', error);
