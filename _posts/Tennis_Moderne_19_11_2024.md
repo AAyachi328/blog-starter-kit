@@ -4,7 +4,7 @@ excerpt: "Le tennis moderne : entre compétitions officielles et exhibitions spe
 coverImage: "/assets/blog/preview/moderne.jpg"
 date: "2024-11-19T10:04:40.605Z"
 author:
-  name: "Sarah Chen"
+  name: "A.Ayachi"
   picture: "/assets/blog/authors/jj.jpeg"
 ogImage:
   url: "/assets/blog/preview/moderne.jpg"

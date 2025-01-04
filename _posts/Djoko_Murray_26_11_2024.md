@@ -4,7 +4,7 @@ excerpt: "Nouvelle collaboration sur le circuit atp : andy murray et novak djoko
 coverImage: "/assets/blog/preview/djoko.jpg"
 date: "2024-11-26T12:39:01.659Z"
 author:
-  name: "Sarah Chen"
+  name: "A.Ayachi"
   picture: "/assets/blog/authors/jj.jpeg"
 ogImage:
   url: "/assets/blog/preview/djoko.jpg"
