@@ -7,8 +7,8 @@ export function Intro() {
         Actus Tennis 🎾
       </h1>
       <h4 className="text-center md:text-left text-lg mt-5 md:pl-8">
-        Les actus du tennis que vous n'avez pas le droit de manquer !!!{" "}
-       {CMS_NAME}.
+        Les actus du tennis a ne pas manquer !!!{" "}
+       - {CMS_NAME}.
       </h4>
     </section>
   );
