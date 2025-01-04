@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BellIcon, BellSlashIcon } from '@heroicons/react/24/outline';
 
 export default function NotificationButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -16,6 +18,10 @@ export default function NotificationButton() {
           reg.pushManager.getSubscription()
             .then(sub => {
               setIsSubscribed(!!sub);
+              // Montrer l'alerte si l'utilisateur n'est pas encore abonné
+              if (!sub && Notification.permission === 'default') {
+                setShowAlert(true);
+              }
             });
         });
     }
@@ -24,6 +30,12 @@ export default function NotificationButton() {
   const subscribeToNotifications = async () => {
     try {
       if (!registration) return;
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('Permission not granted');
+        return;
+      }
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -44,6 +56,7 @@ export default function NotificationButton() {
       }
 
       setIsSubscribed(true);
+      setShowAlert(false);
     } catch (error) {
       console.error('Erreur lors de l\'inscription aux notifications:', error);
     }
@@ -58,13 +71,62 @@ export default function NotificationButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={subscribeToNotifications}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      disabled={isSubscribed}
-    >
-      {isSubscribed ? 'Notifications activées' : 'Activer les notifications'}
-    </button>
+    <>
+      {showAlert && (
+        <div className="fixed bottom-4 right-4 max-w-sm bg-white rounded-lg shadow-lg p-4 border border-blue-100 animate-fade-in">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <BellIcon className="h-6 w-6 text-blue-500" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-gray-900">
+                Restez informé !
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Activez les notifications pour ne manquer aucun nouvel article.
+              </p>
+              <div className="mt-4 flex space-x-3">
+                <button
+                  type="button"
+                  onClick={subscribeToNotifications}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Activer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAlert(false)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Plus tard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={isSubscribed ? undefined : subscribeToNotifications}
+        className={`inline-flex items-center px-4 py-2 rounded-full transition-all duration-200 ${
+          isSubscribed 
+            ? 'bg-green-100 text-green-800 cursor-default'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+        }`}
+      >
+        {isSubscribed ? (
+          <>
+            <BellIcon className="h-5 w-5 mr-2" />
+            Notifications activées
+          </>
+        ) : (
+          <>
+            <BellSlashIcon className="h-5 w-5 mr-2" />
+            Activer les notifications
+          </>
+        )}
+      </button>
+    </>
   );
 } 
