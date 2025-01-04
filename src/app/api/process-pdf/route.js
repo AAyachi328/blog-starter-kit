@@ -250,7 +250,7 @@ export async function POST(request) {
     }
 
     // Création du dossier temporaire s'il n'existe pas
-    const tempDir = path.join(process.cwd(), 'tmp');
+    const tempDir = '/tmp';
     if (!fs.existsSync(tempDir)) {
       console.log('Creating temp directory:', tempDir);
       fs.mkdirSync(tempDir, { recursive: true });
