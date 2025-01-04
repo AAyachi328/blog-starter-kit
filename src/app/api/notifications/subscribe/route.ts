@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
-import { addServerSubscription } from '@/lib/server-subscriptions';
+import { addSubscription } from '@/lib/subscriptions';
 
 export async function POST(request: Request) {
   try {
     const subscription = await request.json();
-    addServerSubscription(subscription);
-    return NextResponse.json({ message: 'Subscription added successfully' });
+    addSubscription(subscription);
+    
+    return NextResponse.json({ message: 'Subscription saved successfully' });
   } catch (error) {
-    console.error('Error adding subscription:', error);
+    console.error('Error saving subscription:', error);
     return NextResponse.json(
-      { error: 'Failed to add subscription' },
+      { error: 'Failed to save subscription' },
       { status: 500 }
     );
   }
