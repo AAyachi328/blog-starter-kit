@@ -1,0 +1,14 @@
+name: Daily Notifications
+
+on:
+  schedule:
+    - cron: '40 22 * * *'  # À 22h40 tous les jours
+  workflow_dispatch:  # Permet de déclencher manuellement
+
+jobs:
+  trigger-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Notifications
+        run: |
+          curl -X GET 'https://blog-starter-kit-aayachi328.vercel.app/api/notifications/daily' 
