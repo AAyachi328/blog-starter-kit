@@ -1,5 +1,5 @@
 ---
-title: "Giovanni Mpetchi Perricard Buté Sur Reilly Opelka en Demi-Finale à Brisbane"
+title: "Giovanni Mpetchi Perricard stoppé par Reilly Opelka en Demi-Finale à Brisbane"
 excerpt: "Giovanni Mpetchi Perricard, jeune talent français, a été éliminé par Reilly Opelka en demi-finale à Brisbane."
 coverImage: "/assets/blog/preview/mpe-perricard-opelka.jpg"
 date: "2025-01-04T12:00:00.000Z"
