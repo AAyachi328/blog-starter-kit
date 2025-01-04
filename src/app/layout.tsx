@@ -61,6 +61,7 @@ export default function RootLayout({
         className={cn(inter.className, "dark:bg-slate-900 dark:text-slate-400")}
       >
         <ThemeSwitcher />
+        <SpeedInsights />
         <div className="min-h-screen">{children}</div>
       </body>
     </html>
