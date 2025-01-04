@@ -3,21 +3,37 @@ import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OpenAI } from 'openai';
-import webpush from 'web-push';
-import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
 import { cookies } from 'next/headers';
 
-// Configuration de web-push avec les clés VAPID
-webpush.setVapidDetails(
-  'mailto:e30m52@gmail.com',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+const NOTIFICATION_COOKIE = 'notifications_enabled';
 
 // Initialisation du client OpenAI avec la clé API
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Fonction pour envoyer une notification pour un nouvel article
+async function notifyNewArticle(title, excerpt) {
+  const cookieStore = await cookies();
+  const notificationsEnabled = cookieStore.get(NOTIFICATION_COOKIE)?.value === 'true';
+  
+  if (!notificationsEnabled) {
+    console.log('Notifications are disabled');
+    return;
+  }
+
+  // Afficher une notification native du navigateur
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    try {
+      const notification = new Notification(`Nouvel Article : ${title}`, {
+        body: excerpt || 'Un nouvel article vient d\'être publié !',
+        icon: '/favicon/favicon-32x32.png'
+      });
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  }
+}
 
 // Fonction pour extraire la date du nom de fichier
 function extractDateFromFileName(fileName) {
@@ -183,29 +199,6 @@ async function checkRunStatus(threadId, runId, maxAttempts = 180) { // 3 minutes
   }
 
   throw new Error(`Timeout after ${maxAttempts} seconds. Last status: ${lastStatus}`);
-}
-
-// Fonction pour envoyer une notification pour un nouvel article
-async function notifyNewArticle(title, excerpt) {
-  const cookieStore = cookies();
-  const notificationsEnabled = cookieStore.get(NOTIFICATION_COOKIE)?.value === 'true';
-  
-  if (!notificationsEnabled) {
-    console.log('Notifications are disabled');
-    return;
-  }
-
-  // Afficher une notification native du navigateur
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    try {
-      const notification = new Notification(`Nouvel Article : ${title}`, {
-        body: excerpt || 'Un nouvel article vient d\'être publié !',
-        icon: '/favicon/favicon-32x32.png'
-      });
-    } catch (error) {
-      console.error('Error showing notification:', error);
-    }
-  }
 }
 
 // Gestionnaire de route POST pour l'API

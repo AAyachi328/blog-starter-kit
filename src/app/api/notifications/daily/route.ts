@@ -27,9 +27,9 @@ export async function GET() {
 
     console.log('Today:', todayStr);
     console.log('Posts found:', todaysPosts.length);
-    todaysPosts.forEach(post => {
+    for (const post of todaysPosts) {
       console.log('Post date:', new Date(post.date).toISOString());
-    });
+    }
 
     if (todaysPosts.length === 0) {
       return NextResponse.json({ message: 'No posts today' });
