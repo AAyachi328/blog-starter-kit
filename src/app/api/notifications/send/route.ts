@@ -2,11 +2,21 @@ import { NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
 
-// Configuration de web-push avec les clés VAPID
+interface WebPushError extends Error {
+  statusCode?: number;
+}
+
+const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+if (!publicKey || !privateKey) {
+  throw new Error('VAPID keys must be set');
+}
+
 webpush.setVapidDetails(
-  'mailto:e30m52@gmail.com', // Remplacez par votre email
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
+  'mailto:e30m52@gmail.com',
+  publicKey,
+  privateKey
 );
 
 export async function POST(request: Request) {
@@ -24,8 +34,7 @@ export async function POST(request: Request) {
         );
       } catch (error) {
         console.error('Error sending notification:', error);
-        // Si l'erreur indique que la souscription n'est plus valide, on la supprime
-        if ((error as any).statusCode === 410) {
+        if ((error as WebPushError).statusCode === 410) {
           removeSubscription(subscription.endpoint);
         }
       }

@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
 
+interface WebPushError extends Error {
+  statusCode?: number;
+}
+
 export async function POST(request: Request) {
   try {
     const { title, excerpt } = await request.json();
@@ -9,7 +13,7 @@ export async function POST(request: Request) {
     
     // Préparer le message de notification
     const notificationPayload = JSON.stringify({
-      title: 'Nouvel Article : ' + title,
+      title: `Nouvel Article : ${title}`,
       body: excerpt || 'Un nouvel article vient d\'être publié !',
     });
 
@@ -19,7 +23,7 @@ export async function POST(request: Request) {
         await webpush.sendNotification(subscription, notificationPayload);
       } catch (error) {
         console.error('Error sending notification:', error);
-        if ((error as any).statusCode === 410) {
+        if ((error as WebPushError).statusCode === 410) {
           removeSubscription(subscription.endpoint);
         }
       }
