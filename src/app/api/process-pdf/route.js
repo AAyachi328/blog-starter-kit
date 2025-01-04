@@ -3,6 +3,15 @@ import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OpenAI } from 'openai';
+import webpush from 'web-push';
+import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
+
+// Configuration de web-push avec les clés VAPID
+webpush.setVapidDetails(
+  'mailto:e30m52@gmail.com',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
 // Initialisation du client OpenAI avec la clé API
 const openai = new OpenAI({
@@ -173,6 +182,29 @@ async function checkRunStatus(threadId, runId, maxAttempts = 180) { // 3 minutes
   }
 
   throw new Error(`Timeout after ${maxAttempts} seconds. Last status: ${lastStatus}`);
+}
+
+// Fonction pour envoyer une notification pour un nouvel article
+async function notifyNewArticle(title, excerpt) {
+  const subscriptions = getSubscriptions();
+  const notifications = subscriptions.map(async (subscription) => {
+    try {
+      await webpush.sendNotification(
+        subscription,
+        JSON.stringify({
+          title: `Nouvel Article : ${title}`,
+          body: excerpt || 'Un nouvel article vient d\'être publié !'
+        })
+      );
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      if (error.statusCode === 410) {
+        removeSubscription(subscription.endpoint);
+      }
+    }
+  });
+
+  await Promise.all(notifications);
 }
 
 // Gestionnaire de route POST pour l'API
@@ -359,6 +391,12 @@ export async function POST(request) {
         console.log('Writing to:', outputPath);
         fs.writeFileSync(outputPath, fullContent, 'utf8');
         console.log('File written successfully');
+
+        // Créer l'extrait pour la notification
+        const articleExcerpt = `Article sur ${title.toLowerCase()}`;
+
+        // Envoyer une notification pour le nouvel article
+        await notifyNewArticle(title, articleExcerpt);
 
         return NextResponse.json({
           result: fullContent,
