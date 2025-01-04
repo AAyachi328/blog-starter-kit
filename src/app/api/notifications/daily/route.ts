@@ -1,66 +1,66 @@
 import { NextResponse } from 'next/server';
-import { getAllPosts } from '@/lib/api';
 import webpush from 'web-push';
-import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
+import { getServerSubscriptions, removeServerSubscription } from '@/lib/server-subscriptions';
+import { getAllPosts } from '@/lib/api';
 
 interface WebPushError extends Error {
   statusCode?: number;
 }
 
-const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-const privateKey = process.env.VAPID_PRIVATE_KEY;
-
-if (!publicKey || !privateKey) {
-  throw new Error('VAPID keys must be set');
+if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  console.error('VAPID keys must be set');
+  process.exit(1);
 }
 
 webpush.setVapidDetails(
-  'mailto:e30m52@gmail.com',
-  publicKey,
-  privateKey
+  'mailto:contact@example.com',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
 );
 
 export async function GET() {
   try {
     // Récupérer les articles du jour
-    const allPosts = getAllPosts();
+    const posts = getAllPosts();
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todaysPosts = allPosts.filter(post => {
+    const todayPosts = posts.filter(post => {
       const postDate = new Date(post.date);
-      postDate.setHours(0, 0, 0, 0);
-      return postDate.getTime() === today.getTime();
+      return postDate.toDateString() === today.toDateString();
     });
 
-    if (todaysPosts.length === 0) {
+    if (todayPosts.length === 0) {
       return NextResponse.json({ message: 'No posts today' });
     }
 
-    // Préparer le message de notification
-    const notificationPayload = JSON.stringify({
-      title: `Résumé Tennis du ${today.toLocaleDateString('fr-FR')}`,
-      body: `${todaysPosts.length} nouveaux articles aujourd'hui. Cliquez pour les lire !`
-    });
-
-    // Envoyer la notification à tous les abonnés
-    const subscriptions = getSubscriptions();
-    const notifications = subscriptions.map(async (subscription) => {
+    // Envoyer les notifications
+    const subscriptions = getServerSubscriptions();
+    const notificationPromises = subscriptions.map(async (subscription) => {
       try {
-        await webpush.sendNotification(subscription, notificationPayload);
+        await webpush.sendNotification(
+          subscription,
+          JSON.stringify({
+            title: 'Résumé Tennis News',
+            body: `${todayPosts.length} article${todayPosts.length > 1 ? 's' : ''} publié${todayPosts.length > 1 ? 's' : ''} aujourd'hui !`,
+            icon: '/favicon/favicon-32x32.png',
+            badge: '/favicon/favicon-32x32.png',
+            data: {
+              url: '/'
+            }
+          })
+        );
       } catch (error) {
         console.error('Error sending notification:', error);
         if ((error as WebPushError).statusCode === 410) {
-          removeSubscription(subscription.endpoint);
+          removeServerSubscription(subscription.endpoint);
         }
       }
     });
 
-    await Promise.all(notifications);
-    
-    return NextResponse.json({ 
+    await Promise.all(notificationPromises);
+
+    return NextResponse.json({
       message: 'Daily notifications sent successfully',
-      postsCount: todaysPosts.length
+      postsCount: todayPosts.length
     });
   } catch (error) {
     console.error('Error sending daily notifications:', error);
