@@ -1,8 +1,8 @@
 ---
 title: "Rafael Nadal: La Dernière Danse à Malaga"
-excerpt: "Article sur rafael nadal: la dernière danse à malaga"
+excerpt: "Rafael Nadal: la dernière danse à Malaga"
 coverImage: "/assets/blog/preview/nadal.jpg"
-date: "2025-01-03T13:01:16.693Z"
+date: "2024-11-19T13:01:16.693Z"
 author:
   name: "Sarah Chen"
   picture: "/assets/blog/authors/jj.jpeg"

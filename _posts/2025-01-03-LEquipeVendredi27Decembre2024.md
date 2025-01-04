@@ -1,8 +1,8 @@
 ---
 title: "Ugo Humbert : Un Nouveau Départ pour la Saison de Tennis 2025"
-excerpt: "Article sur titre : ugo humbert : un nouveau départ pour la saison de tennis 2025"
+excerpt: "Ugo Humbert : un nouveau départ pour la saison de tennis 2025"
 coverImage: "/assets/blog/preview/ugo.avif"
-date: "2025-01-03T10:08:03.357Z"
+date: "2024-12-27T10:08:03.357Z"
 author:
   name: "Sarah Chen"
   picture: "/assets/blog/authors/jj.jpeg"

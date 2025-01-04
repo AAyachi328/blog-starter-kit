@@ -82,6 +82,8 @@ async function getOrCreateAssistant() {
       6. N'utilisez PAS d'astérisques (**) pour les titres
       7. Le titre principal DOIT être de niveau 2 (##), les sous-titres peuvent être de niveau 3 (###)
       8. Le titre principal doit être la première ligne de votre réponse
+      9. Ne conservez PAS les références de source comme 【4:14†source】 dans le texte
+      10. Réécrivez le contenu avec vos propres mots sans citer les sources
 
       Exemple exact de la structure attendue :
 
@@ -317,8 +319,12 @@ export async function POST(request) {
         // Log de la réponse brute pour déboguer
         console.log('Raw response:', text.value);
 
+        // Nettoyer les références de source
+        const cleanContent = text.value.replace(/【[^】]+】/g, '');
+        console.log('Content after cleaning sources:', cleanContent);
+
         // Extraire le premier titre pour l'utiliser dans le frontmatter
-        const lines = text.value.split('\n').map(line => line.trim()).filter(line => line);
+        const lines = cleanContent.split('\n').map(line => line.trim()).filter(line => line);
         console.log('Lines:', lines);
         
         // Chercher un titre avec #, ##, ### ou **
@@ -338,7 +344,7 @@ export async function POST(request) {
         console.log('Final extracted title:', title);
 
         // Supprimer le titre du contenu car il sera dans le frontmatter
-        const contentWithoutTitle = text.value.replace(titleLine, '').trim();
+        const contentWithoutTitle = cleanContent.replace(titleLine, '').trim();
 
         // Générer le contenu complet avec frontmatter
         const fullContent = generateFrontmatter(title, originalName) + contentWithoutTitle;

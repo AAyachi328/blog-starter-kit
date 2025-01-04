@@ -1,8 +1,8 @@
 ---
 title: "Nouvelle Collaboration sur le Circuit ATP : Andy Murray et Novak Djokovic"
-excerpt: "Article sur nouvelle collaboration sur le circuit atp : andy murray et novak djokovic"
+excerpt: "Nouvelle collaboration sur le circuit atp : andy murray et novak djokovic"
 coverImage: "/assets/blog/preview/djoko.jpg"
-date: "2025-01-03T12:39:01.659Z"
+date: "2024-11-26T12:39:01.659Z"
 author:
   name: "Sarah Chen"
   picture: "/assets/blog/authors/jj.jpeg"
