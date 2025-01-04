@@ -1,5 +1,5 @@
 import { CMS_NAME } from "@/lib/constants";
-import NotificationButton from "./NotificationButton";
+import NotificationToggle from "./NotificationToggle";
 
 export function Intro() {
   return (
@@ -11,8 +11,8 @@ export function Intro() {
         <h4 className="text-lg mb-4">
           Les actus du tennis à ne pas manquer !!! - {CMS_NAME}.
         </h4>
-        <NotificationButton />
+        <NotificationToggle />
       </div>
     </section>
-  );
+  )
 }

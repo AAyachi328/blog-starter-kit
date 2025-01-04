@@ -5,6 +5,7 @@ import path from 'node:path';
 import { OpenAI } from 'openai';
 import webpush from 'web-push';
 import { getSubscriptions, removeSubscription } from '@/lib/subscriptions';
+import { cookies } from 'next/headers';
 
 // Configuration de web-push avec les clés VAPID
 webpush.setVapidDetails(
@@ -186,25 +187,25 @@ async function checkRunStatus(threadId, runId, maxAttempts = 180) { // 3 minutes
 
 // Fonction pour envoyer une notification pour un nouvel article
 async function notifyNewArticle(title, excerpt) {
-  const subscriptions = getSubscriptions();
-  const notifications = subscriptions.map(async (subscription) => {
-    try {
-      await webpush.sendNotification(
-        subscription,
-        JSON.stringify({
-          title: `Nouvel Article : ${title}`,
-          body: excerpt || 'Un nouvel article vient d\'être publié !'
-        })
-      );
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      if (error.statusCode === 410) {
-        removeSubscription(subscription.endpoint);
-      }
-    }
-  });
+  const cookieStore = cookies();
+  const notificationsEnabled = cookieStore.get(NOTIFICATION_COOKIE)?.value === 'true';
+  
+  if (!notificationsEnabled) {
+    console.log('Notifications are disabled');
+    return;
+  }
 
-  await Promise.all(notifications);
+  // Afficher une notification native du navigateur
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    try {
+      const notification = new Notification(`Nouvel Article : ${title}`, {
+        body: excerpt || 'Un nouvel article vient d\'être publié !',
+        icon: '/favicon/favicon-32x32.png'
+      });
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  }
 }
 
 // Gestionnaire de route POST pour l'API

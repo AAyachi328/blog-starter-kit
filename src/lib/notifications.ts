@@ -1,20 +1,21 @@
-export async function sendNotification(title: string, body: string) {
-  try {
-    const response = await fetch('/api/notifications/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ title, body }),
-    });
+import { cookies } from 'next/headers';
 
-    if (!response.ok) {
-      throw new Error('Failed to send notification');
-    }
+const NOTIFICATION_COOKIE = 'notifications_enabled';
 
-    return true;
-  } catch (error) {
-    console.error('Error sending notification:', error);
-    return false;
-  }
+export function enableNotifications() {
+  const cookieStore = cookies();
+  cookieStore.set(NOTIFICATION_COOKIE, 'true', {
+    maxAge: 365 * 24 * 60 * 60, // 1 an
+    path: '/',
+  });
+}
+
+export function disableNotifications() {
+  const cookieStore = cookies();
+  cookieStore.delete(NOTIFICATION_COOKIE);
+}
+
+export function areNotificationsEnabled() {
+  const cookieStore = cookies();
+  return cookieStore.get(NOTIFICATION_COOKIE)?.value === 'true';
 } 

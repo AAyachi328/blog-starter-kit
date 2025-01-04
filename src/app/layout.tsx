@@ -6,6 +6,7 @@ import cn from "classnames";
 import { ThemeSwitcher } from "./_components/theme-switcher";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css";
+import DailyNotifications from '@/app/_components/DailyNotifications'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -62,7 +63,9 @@ export default function RootLayout({
       >
         <ThemeSwitcher />
         <SpeedInsights />
+        <DailyNotifications />
         <div className="min-h-screen">{children}</div>
+        <Footer />
       </body>
     </html>
   );
