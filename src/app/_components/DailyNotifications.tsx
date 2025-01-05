@@ -45,7 +45,7 @@ export default function DailyNotifications() {
     // En production, vérifier à 22h10
     const now = new Date();
     const targetHour = 21;
-    const targetMinute = 16;
+    const targetMinute = 30;
 
     // Calculer le délai jusqu'à la prochaine vérification
     const msUntilTarget = new Date().setHours(targetHour, targetMinute, 0, 0) - now.getTime();
