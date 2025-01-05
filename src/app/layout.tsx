@@ -7,6 +7,7 @@ import { ThemeSwitcher } from "./_components/theme-switcher";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css";
 import DailyNotifications from '@/app/_components/DailyNotifications'
+import { AudioManagerProvider } from '@/app/_components/AudioManager'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -61,11 +62,12 @@ export default function RootLayout({
       <body
         className={cn(inter.className, "dark:bg-slate-900 dark:text-slate-400")}
       >
-        <ThemeSwitcher />
-        <SpeedInsights />
-        <DailyNotifications />
-        <div className="min-h-screen">{children}</div>
-        
+        <AudioManagerProvider>
+          <ThemeSwitcher />
+          <SpeedInsights />
+          <DailyNotifications />
+          <div className="min-h-screen">{children}</div>
+        </AudioManagerProvider>
       </body>
     </html>
   );
