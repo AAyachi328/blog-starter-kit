@@ -4,7 +4,7 @@ excerpt: "Giovanni Mpetchi Perricard, jeune talent français, a été éliminé 
 coverImage: "/assets/blog/preview/mpe-perricard-opelka.jpg"
 date: "2025-01-04T12:00:00.000Z"
 author:
-  name: "L.Tennis"
+  name: "A.Ayachi"
   picture: "/assets/blog/authors/jj.jpeg"
 ogImage:
   url: "/assets/blog/preview/mpe-perricard-opelka.jpg"
