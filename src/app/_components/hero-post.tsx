@@ -3,6 +3,7 @@ import CoverImage from "@/app/_components/cover-image";
 import { type Author } from "@/interfaces/author";
 import Link from "next/link";
 import DateFormatter from "./date-formatter";
+import TextToSpeech from "./TextToSpeech";
 
 type Props = {
   title: string;
@@ -26,20 +27,21 @@ export function HeroPost({
       <div className="mb-8 md:mb-16">
         <CoverImage title={title} src={coverImage} slug={slug} />
       </div>
-      <div className="md:grid md:grid-cols-2 md:gap-x-16 lg:gap-x-8 mb-20 md:mb-28">
-        <div>
-          <h3 className="mb-4 text-4xl lg:text-5xl leading-tight">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h3 className="mb-2 text-4xl lg:text-5xl leading-tight">
             <Link href={`/posts/${slug}`} className="hover:underline">
               {title}
             </Link>
           </h3>
-          <div className="mb-4 md:mb-0 text-lg">
+          <p className="text-lg leading-relaxed mb-4 max-w-2xl mx-auto">{excerpt}</p>
+          <div className="text-lg mb-6 text-gray-500">
             <DateFormatter dateString={date} />
           </div>
-        </div>
-        <div>
-          <p className="text-lg leading-relaxed mb-4">{excerpt}</p>
-          <Avatar name={author.name} picture={author.picture} />
+          <div className="flex justify-center items-center gap-8 flex-wrap">
+            <TextToSpeech slug={slug} />
+            <Avatar name={author.name} picture={author.picture} />
+          </div>
         </div>
       </div>
     </section>
