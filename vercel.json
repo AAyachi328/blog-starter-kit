@@ -1,6 +1,6 @@
 {
   "crons": [{
     "path": "/api/notifications/daily",
-    "schedule": "40 22 * * *"
+    "schedule": "40 21 * * *"
   }]
 } 
