@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
 
-    const post = getPostBySlug(slug, ['title', 'content']);
+    const post = getPostBySlug(slug);
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
