@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getAllPosts } from '@/lib/api';
-
-const NOTIFICATION_COOKIE = 'notifications_enabled';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const notificationsEnabled = cookieStore.get(NOTIFICATION_COOKIE)?.value === 'true';
-
-    if (!notificationsEnabled) {
-      return NextResponse.json({ 
-        message: 'Notifications are disabled',
-        status: 'disabled'
-      });
-    }
-
     // Récupérer les articles du jour
     const allPosts = getAllPosts();
     const today = new Date();
@@ -49,7 +36,7 @@ export async function GET() {
     };
 
     // Envoyer la notification
-    const response = await fetch('/api/notifications/send', {
+    const response = await fetch('http://localhost:3000/api/notifications/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
