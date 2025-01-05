@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts } from '@/lib/api';
+import { headers } from 'next/headers';
 
 export async function GET() {
   try {
@@ -36,7 +37,11 @@ export async function GET() {
     };
 
     // Envoyer la notification
-    const response = await fetch('http://localhost:3000/api/notifications/send', {
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    
+    const response = await fetch(`${protocol}://${host}/api/notifications/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
