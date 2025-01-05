@@ -65,7 +65,7 @@ export default function RootLayout({
         <SpeedInsights />
         <DailyNotifications />
         <div className="min-h-screen">{children}</div>
-        <Footer />
+        
       </body>
     </html>
   );
