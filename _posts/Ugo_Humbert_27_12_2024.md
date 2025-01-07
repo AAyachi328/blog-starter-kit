@@ -10,7 +10,6 @@ ogImage:
   url: "/assets/blog/preview/ugo.avif"
 ---
 
-**Introduction**
 
 Alors que le monde du tennis se prépare pour une nouvelle saison, le numéro un français, Ugo Humbert, se lance dans une préparation intense en compagnie de son équipe. Avec la United Cup en ligne de mire, Humbert aspire à réaliser une saison mémorable en 2025, en mettant l'accent sur sa préparation physique et mentale.
 
@@ -27,7 +26,5 @@ La saison d’Humbert débutera officiellement à la United Cup en Australie. Sa
 **En Équilibre Entre Force et Technique**
 
 Toutefois, l’objectif ne se limite pas à la force brute. L'équipe d’Humbert veille à préserver son jeu artistique, notamment son timing exceptionnel et son agilité sur le court. Le développement musculaire ne doit donc pas compromettre ces atouts naturels, un point sur lequel l’entourage d’Humbert, y compris Moreau, est particulièrement vigilant.
-
-**Conclusion**
 
 Le défi pour Ugo Humbert est clair : conjuguer un physique robuste avec un jeu techniquement raffiné pour exceller tout au long de la saison 2025. Alors qu’il s’apprête à entrer dans l'arène de la United Cup, le jeune français est déterminé à intégrer pleinement les fruits de sa préparation hivernale. Pour Humbert, cette saison est plus qu'une simple compétition; c'est une quête pour franchir un nouveau cap dans sa carrière professionnelle.

@@ -103,7 +103,7 @@ async function getOrCreateAssistant() {
       1. Utilisez l'outil file_search pour lire le contenu du PDF
       2. Créez un article avec des titres courts et accrocheurs
       3. Commencez TOUJOURS par un titre principal de niveau 2 en utilisant '## ' (deux dièses suivis d'un espace)
-      4. Structurez le contenu de manière journalistique
+      4. Structurez le contenu de manière journalistique (sans ecrire les sous titres 'introduction' et 'conclusion')
       5. Ne mentionnez jamais la source ou le PDF dans le contenu
       6. N'utilisez PAS d'astérisques (**) pour les titres
       7. Le titre principal DOIT être de niveau 2 (##), les sous-titres peuvent être de niveau 3 (###)
