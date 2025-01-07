@@ -8,6 +8,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css";
 import DailyNotifications from '@/app/_components/DailyNotifications'
 import { AudioManagerProvider } from '@/app/_components/AudioManager'
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -65,6 +66,7 @@ export default function RootLayout({
         <AudioManagerProvider>
           <ThemeSwitcher />
           <SpeedInsights />
+          <Analytics />
           <DailyNotifications />
           <div className="min-h-screen">{children}</div>
         </AudioManagerProvider>
